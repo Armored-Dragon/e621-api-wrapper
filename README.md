@@ -2,10 +2,10 @@
 &nbsp; &nbsp; &nbsp; <img src="https://github.com/Armored-Dragon/e621-api-wrapper/blob/master/images/e621_api_wrapper_logo_(1.0.0).png?raw=true" height="150">
 </p>
 <p align="center">
-<img src="https://img.shields.io/github/downloads/armored-dragon/steam-account-protection/total?style=for-the-badge">
-<img src="https://img.shields.io/github/languages/code-size/armored-dragon/steam-account-protection?style=for-the-badge">
+<img src="https://img.shields.io/github/downloads/armored-dragon/e621-api-wrapper/total?style=for-the-badge">
 <img src="https://img.shields.io/github/contributors/armored-dragon/e621-api-wrapper?style=for-the-badge">
-<img src="https://img.shields.io/github/issues-raw/armored-dragon/steam-account-protection?style=for-the-badge">
+<img src="https://img.shields.io/github/issues-raw/armored-dragon/e621-api-wrapper?style=for-the-badge">
+<img src="https://img.shields.io/github/languages/code-size/armored-dragon/e621-api-wrapper?style=for-the-badge">
 
 </p>
 
