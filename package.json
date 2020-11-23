@@ -1,29 +1,23 @@
 {
-  "name": "e621-api-wrapper",
-  "version": "1.0.0",
-  "description": "A simple API wrapper for e621/e926.",
-  "main": "e621-api-wrapper.js",
-  "dependencies": {
-    "axios": "^0.21.0",
-    "form-data": "^3.0.0",
-    "npm": "^6.14.9",
-    "qs": "^6.9.4"
-  },
-  "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "e621-api-wrapper"
-  },
-  "keywords": [
-    "e621",
-    "furry",
-    "e921",
-    "api",
-    "wrapper"
-  ],
-  "author": "Armored_Dragon",
-  "license": "GPL-3.0"
+	"name": "e621-api-wrapper",
+	"version": "1.0.0",
+	"description": "A simple API wrapper for e621/e926.",
+	"main": "e621-api-wrapper.js",
+	"dependencies": {
+		"axios": "^0.21.0",
+		"form-data": "^3.0.0",
+		"npm": "^6.14.9",
+		"qs": "^6.9.4"
+	},
+	"devDependencies": {},
+	"scripts": {
+		"test": "node test.js"
+	},
+	"repository": {
+		"type": "git",
+		"url": "e621-api-wrapper"
+	},
+	"keywords": [ "e621", "furry", "e921", "api", "wrapper" ],
+	"author": "Armored_Dragon",
+	"license": "GPL-3.0"
 }

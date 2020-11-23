@@ -1,0 +1,1 @@
+const e621 = new (require(`./e621-api-wrapper`)).e621({ project_name: `test` });
