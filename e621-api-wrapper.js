@@ -115,22 +115,22 @@ class e621 {
 	/* ---------------------------------- Posts --------------------------------- */
 	/**
 	 * Search for posts using tags
-	 * @param {string} tags - A space separated list of tags to search for
-	 * @param {Object} options
+	 * @param {Object} [options]
+	 * @param {string} [options.tags=""] - A space separated list of tags to search for.
 	 * @param {number} [options.page=0] - The page to return. 
 	 * @param {number} [options.post_limit=50] - The limit of posts to return.
+	 * @returns {Promise}
 	 */
-	async postsList(tags, { page = 0, limit = 50 } = {}) {
-		if (!tags) throw new Error(`tags must be specified! Got ${search_request}`);
-
+	async postsList({ tags = " ", page = 0, limit = 50 } = {}) {
 		let params = new RequestParameters();
 		params.add(`tags`, tags);
 		params.add(`page`, page);
-		params.add(`post_limit`, limit);
+		params.add(`limit`, limit);
 
 		return this._checkResponseCode(await this._makeGetRequest('/posts.json', params.list()));
 	}
 	// TODO: What is referer_url?
+	// TODO: Check for rating on post
 	/**
 	 * Create posts
 	 * @param {string} file - A URL or a file directory of the file you wish to upload
@@ -188,7 +188,7 @@ class e621 {
 		return this._checkResponseCode(await this._makePostRequest(`/posts/${post_id}/votes.json`, params.list()));
 	}
 	// TODO: Test
-	async postsFavorite(post_id, favorite = 1) {
+	async postsFavorite(post_id, { favorite = 1 } = {}) {
 		let params = new RequestParameters();
 		if (!post_id) throw new Error(`post_id must be specified! Got ${post_id}`);
 		if (favorite != 1 && favorite != -1) throw new Error(`favorite must be either "1" or "-1"! Got ${favorite}`);
@@ -228,11 +228,8 @@ class e621 {
 		params.add(`lock_rating`, lock_rating);
 		params.add(`lock_notes`, lock_notes);
 
-		const response = await this._makePatchRequest(`/posts/${post_id}.json`, params.list());
-		return this._checkResponseCode(response);
+		return this._checkResponseCode(await this._makePatchRequest(`/posts/${post_id}.json`, params.list()));
 	}
-
-	// TODO: search[] isn't correct?
 	/**
 	 * List post flags
 	 * @param {Object} options Options in listing post flags.
@@ -267,8 +264,7 @@ class e621 {
 		params.add(`reason_name`, reason_name);
 		params.add(`parent_id`, parent_id);
 
-		const response = await this._makePostRequest(`/post_flags.json`, params.list());
-		return this._checkResponseCode(response, 201);
+		return this._checkResponseCode(await this._makePostRequest(`/post_flags.json`, params.list()), 201);
 	}
 
 	/* ---------------------------------- Tags ---------------------------------- */
@@ -559,6 +555,7 @@ class e621 {
 	/**
 	 * Get an account by name.
 	 * @param {string} [name] - The Username of the account to get.
+	 * @returns {Promise}
 	 */
 	async getAccount(name = this.username) {
 		return this._checkResponseCode(await this._makeGetRequest(`/users/${name}.json`));

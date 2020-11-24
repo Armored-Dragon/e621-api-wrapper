@@ -1,6 +1,6 @@
 {
 	"name": "e621-api-wrapper",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "A simple API wrapper for e621/e926.",
 	"main": "e621-api-wrapper.js",
 	"dependencies": {
@@ -17,7 +17,7 @@
 		"type": "git",
 		"url": "e621-api-wrapper"
 	},
-	"keywords": [ "e621", "furry", "e921", "api", "wrapper" ],
+	"keywords": [ "e621", "furry", "e921", "e926", "api", "wrapper" ],
 	"author": "Armored_Dragon",
 	"license": "GPL-3.0"
 }
