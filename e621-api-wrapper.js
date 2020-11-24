@@ -236,12 +236,14 @@ class e621 {
 	 * @param {string} [options.creator_id] - Filter based on the id of the creator.
 	 * @param {string} [options.post_id] - Filter based on the post ID.
 	 * @param {string} [options.creator_name] - Filter based on the account name.
+	 * @param {number} [options.limit] - The maximum amount of search results to return.
 	 */
-	async postFlagList({ creator_id, post_id, creator_name } = {}) {
+	async postFlagList({ creator_id, post_id, creator_name, limit } = {}) {
 		let params = new RequestParameters();
 		params.add(`creator_id`, creator_id);
 		params.add(`post_id`, post_id);
 		params.add(`creator_name`, creator_name);
+		params.add(`limit`, limit);
 
 		return this._checkResponseCode(await this._makeGetRequest(`/post_flags.json`, params.list()));
 	}
@@ -347,7 +349,7 @@ class e621 {
 		params.add(`creator_name`, creator_name);
 		params.add(`creator_id`, creator_id);
 		params.add(`is_active`, is_active);
-		params.add(`limit`, limit);
+		params.add(`limit`, limit, true);
 
 		return this._checkResponseCode(await this._makeGetRequest(`/notes.json`, params.list()));
 	}
@@ -419,7 +421,7 @@ class e621 {
 		return this._checkResponseCode(await this._makeDeleteRequest(`/notes/${note_id}.json`));
 	}
 
-	// NOTE: No one knows how to get the version ID.
+	// NOTE: No one knows how to get the version ID cleanly from API. If you do, please tell! :)
 	/**
 	 * Revert a note to a previous version.
 	 * @param {string} note_id - The target note's ID.
@@ -440,9 +442,9 @@ class e621 {
 	/**
 	 * List pools.
 	 * @param {Object} options - Options.
-	 * @param {string} [options.name_matches] - Filter pools based on their name. Look for pools that contain this.
+	 * @param {string} [options.name_matches] - Filter pools based on their name. 
 	 * @param {string} [options.id] - Find pool based on ID.
-	 * @param {string} [options.description_matches] - Filter pools based on their description. Look for pools that contain this.
+	 * @param {string} [options.description_matches] - Filter pools based on their description.
 	 * @param {string} [options.creator_name] - Filter pools based on their creator name.
 	 * @param {string} [options.creator_id] - Filter pools based on their creator ID.
 	 * @param {boolean} [options.is_active] - Filter based on active status. Can be "true", "false", or blank.
