@@ -34,13 +34,13 @@ function is_url(string) {
 class e621 {
 	/**
 	 * Assign account credentials to this instance.
+	 * @param {string} project_name - The name of your project.
 	 * @param {string} options 
 	 * @param {string} [options.username] The username of the account.
 	 * @param {string} [options.api_key] The API key of the account.
-	 * @param {string} options.project_name The name of your project.
 	 * @param {string} [options.base_url=https://e621.net] The base url for this API to use.
 	 */
-	constructor({ username = "", api_key = "", project_name, base_url = "https://e621.net" } = {}) {
+	constructor(project_name, { username = "", api_key = "", base_url = "https://e621.net" } = {}) {
 		if (!project_name) throw new Error(`No project_name supplied. This is required to identify your project.`);
 
 		this.username = username;
@@ -58,7 +58,6 @@ class e621 {
 				password: this.api_key
 			};
 		}
-
 	}
 
 	/* ---------------------------- Internal helpers ---------------------------- */
@@ -270,11 +269,12 @@ class e621 {
 	}
 
 	/* ---------------------------------- Tags ---------------------------------- */
+	//REVIEW: Category as string & number?
 	/**
 	 * List tags
 	 * @param {Object} options - The options.
 	 * @param {string} [options.name_matches] - Filter by the name of the tag.
-	 * @param {number} [options.category] - Filter by the category of the tag. Can be a number as a string.
+	 * @param {number} [options.category] - Filter by the category of the tag.
 	 * @param {string} [options.order=date] - Change the sort order based on "date", "count", or "name".
 	 * @param {string} [options.hide_empty=true] - Hide tags with zero visible posts.
 	 * @param {string} [options.has_wiki=""] - Show tags with or without a wiki. Pass "true", "false", or "".
@@ -282,7 +282,7 @@ class e621 {
 	 * @param {string} [options.limit=75] - Limit the maximum number of tags to request for. Maximum of 1000.
 	 * @param {string} [options.page=0] - The page that will be returned.
 	 */
-	async tagsList({ name_matches, category, order = "date", hide_empty = true, has_wiki = "", has_artist = "", limit = 75, page = 0 }) {
+	async tagsList({ name_matches, category, order = "date", hide_empty = true, has_wiki = "", has_artist = "", limit = 75, page = 0 } = {}) {
 		let params = new RequestParameters(`search`);
 		params.add(`name_matches`, name_matches);
 		params.add(`category`, category);
@@ -532,12 +532,14 @@ class e621 {
 		return this._checkResponseCode(await this._makePutRequest(`/pools/${pool_id}.json`, params.list()));
 	}
 
-	/* --------------------------------- Generic -------------------------------- */
+	/* -------------------------------- Accounts -------------------------------- */
+	// REVIEW: Review can_approve_posts. true/false/undefined?
+	// REVIEW: Review can_upload_free. true/false/undefined?
 	/**
 	 * Search accounts
 	 * @param {Object} options 
 	 * @param {string} [options.account_id] - The account ID of the user.
-	 * @param {string} [options.level] - Filter by the level of the users.
+	 * @param {string} [options.level] - Filter by the level of the user.
 	 * @param {boolean} [options.can_approve_posts] - Filter by users who can approve posts.
 	 * @param {boolean} [options.can_upload_free] - Filter by users who can upload freely without a review.
 	 * @param {number} [options.limit] - The maximum amount of search results to return.
@@ -562,6 +564,7 @@ class e621 {
 	async getAccount(name = this.username) {
 		return this._checkResponseCode(await this._makeGetRequest(`/users/${name}.json`));
 	}
+	/* --------------------------------- Generic -------------------------------- */
 
 	/**
 	 * List Wiki pages.
@@ -610,7 +613,7 @@ class e621 {
 	/**
 	 * List post sets.
 	 * @param {Object} options
-	 * @param {string} [options.id] - the ID of the post set to search for.
+	 * @param {string} [options.id] - The ID of the post set to search for.
 	 * @param {string} [options.creator_id] - Filter by the creator ID.
 	 * @param {string} [options.name] - Filter by the name of the set.
 	 * @param {string} [options.short_name] - Filter by the short name of the set.
@@ -672,12 +675,14 @@ class e621 {
 		return this._checkResponseCode(await this._makeGetRequest(`/user_feedbacks.json`, params.list()));
 	}
 
+	// REVIEW: What is required bu category ID? Check enums!
+	// REVIEW: Can booleans also use undefined?
 	/**
 	 * List forum topics
 	 * @param {Object} options
 	 * @param {string} [options.id] - Filter by the ID of the forum topic.
-	 * @param {string} [options.is_sticky] - Filter by the stick status.
-	 * @param {string} [options.is_locked] - Filter by the lock status.
+	 * @param {boolean} [options.is_sticky] - Filter by the stick status.
+	 * @param {boolean} [options.is_locked] - Filter by the lock status.
 	 * @param {string} [options.category_id] - Filter by the category ID.
 	 * @param {string} [options.limit] - The maximum amount of search results to return.
 	 */
