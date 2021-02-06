@@ -4,7 +4,6 @@ const qs = require('qs');
 const FormData = require('form-data');
 const crypto = require(`crypto`);
 
-// TODO: Test Generic apis. Create? Delete? Revert?
 
 function __is_object(item) {
 	return (item && typeof item === 'object' && !Array.isArray(item));
@@ -40,20 +39,21 @@ class e621 {
 	 * @param {string} [options.api_key] The API key of the account.
 	 * @param {string} [options.base_url=https://e621.net] The base url for this API to use.
 	 */
-	constructor(project_name, { username = "", api_key = "", base_url = "https://e621.net" } = {}) {
+	constructor(project_name, { username, api_key, base_url = "https://e621.net" } = {}) {
 		if (!project_name) throw new Error(`No project_name supplied. This is required to identify your project.`);
 
 		this.username = username;
 		this.api_key = api_key;
+		this.base_url = base_url;
+
 		this.request_settings = {
 			headers: {
 				"User-Agent": `${project_name}/(by Armored_Dragon)`
 			}
 		};
-		this.base_url = base_url;
 
 		if (username && api_key) {
-			this.request_settings[auth] = {
+			this.request_settings['auth'] = {
 				username: this.username,
 				password: this.api_key
 			};
@@ -111,16 +111,16 @@ class e621 {
 		return response;
 	}
 
-	/* ---------------------------------- Posts --------------------------------- */
+	// ─── POSTS ──────────────────────────────────────────────────────────────────────
 	/**
-	 * Search for posts using tags
+	 * Search for posts using tags.
 	 * @param {Object} [options]
-	 * @param {string} [options.tags=""] - A space separated list of tags to search for.
+	 * @param {string} [options.tags] - A space separated list of tags to search for.
 	 * @param {number} [options.page=0] - The page to return. 
 	 * @param {number} [options.post_limit=50] - The limit of posts to return.
 	 * @returns {Promise}
 	 */
-	async postsList({ tags = " ", page = 0, limit = 50 } = {}) {
+	async postsList({ tags, page = 0, limit = 50 } = {}) {
 		let params = new RequestParameters();
 		params.add(`tags`, tags);
 		params.add(`page`, page);
@@ -128,21 +128,27 @@ class e621 {
 
 		return this._checkResponseCode(await this._makeGetRequest('/posts.json', params.list()));
 	}
-	// TODO: What is referer_url?
-	// TODO: Check for rating on post
+
 	/**
-	 * Create posts
+	 * Create posts from a local file or url.
 	 * @param {string} file - A URL or a file directory of the file you wish to upload
 	 * @param {string} tags - A space separated list of tags to apply to the post 
 	 * @param {string} rating - The rating for the post. "e", "q", or "s" for explicit, questionable, or safe.
 	 * @param {string} source - The URL(s) for the source. 
-	 * @param {Object} optional - Optional values for creating a post.
+	 * @param {Object} [optional] - Optional values for creating a post.
 	 * @param {string} [optional.description] - The description of the post.
 	 * @param {string} [optional.parent_id] - The parent ID of the post.
 	 * @param {string} [optional.md5_confirmation] - The MD5 hash of the file to upload.
+	 * @returns {Promise}
 	 */
 	async postsCreate(file, tags, rating, source, { description, parent_id, md5_confirmation } = {}) {
+		if (!file || !tags || !rating || !source) throw new Error(`You are missing the following parameters:\n ${file ? '' : '"file "'}${tags ? '' : '"tags "'}${rating ? '' : '"rating "'}${source ? '' : '"source"'}`);
 		let params = new FormData();
+		let rating_formated;
+
+		if (['e', 'explicit'].includes(rating)) rating_formated = 'e';
+		if (['q', 'questionable'].includes(rating)) rating_formated = 'q';
+		if (['s', 'safe'].includes(rating)) rating_formated = 's';
 
 		if (is_url(file))
 			params.append('upload[direct_url]', file);
@@ -151,32 +157,30 @@ class e621 {
 			if (!md5_confirmation) md5_confirmation = await this._generateMD5Hash(file);
 		}
 
-		params.append('upload[md5_confirmation]', md5_confirmation);
+		//params.append('upload[md5_confirmation]', md5_confirmation); // FIXME: MD5 confirmation fails?
 		params.append('upload[tag_string]', tags);
-		params.append('upload[rating]', rating);
+		params.append('upload[rating]', rating_formated);
 		params.append('upload[source]', source);
 		if (description) params.append('upload[description]', description);
 		if (parent_id) params.append('upload[parent_id]', parent_id);
-		// TODO: Other fields?
-		// NOTE: Responses sometimes come back as 412. Check for that
 		try {
-			let response = await this._makePostRequest('/uploads.json', params, false, { headers: params.getHeaders() });
-			return this._checkResponseCode(response);
+			return this._checkResponseCode(await this._makePostRequest('/uploads.json', params, false, { headers: params.getHeaders() }));
 		} catch (response) {
 			return response;
 		}
 	}
+
 	/**
 	 * Vote on a post.
 	 * @param {string} post_id - The ID of the post you want to vote on
-	 * @param {string} score - The score to give the post. ( Up / Down )
-	 * @param {object} optional - Optional parameters
+	 * @param {number} score - The score to give the post.
+	 * @param {object} [optional] - Optional parameters
 	 * @param {boolean} [optional.no_unvote=false] - Have this vote override any previous vote.
+	 * @returns {Promise}
 	 */
 	async postsVote(post_id, score, { no_unvote = false } = {}) {
-		if (!post_id) throw new Error(`post_id must be specified! Got ${post_id}`);
-		if (!score) throw new Error(`score must be specified! Got ${score}`);
-		if (!["up", "down"].includes(score)) throw new Error(`score must be either "up", or "down"! Got ${score}`);
+		if (!post_id || !score) throw new Error(`You are missing the following parameters:\n ${post_id ? '' : '"post_id "'}${score ? '' : '"score "'}`);
+		if (!['up', 'down'].includes(score)) throw new Error(`score must be either "up", or "down"! Got ${score}`);
 
 		const score_map = { up: 1, down: -1 };
 
@@ -186,49 +190,121 @@ class e621 {
 
 		return this._checkResponseCode(await this._makePostRequest(`/posts/${post_id}/votes.json`, params.list()));
 	}
-	// TODO: Test
-	async postsFavorite(post_id, { favorite = 1 } = {}) {
+
+	/**
+	 * Add a post to the favorites list.
+	 * @param {string} post_id - The ID of the post to favorite.
+	 * @param {object} [optional] - Optional parameters.
+	 * @param {boolean} [optional.favorite=true] - Set to true to add to favorites, set to false to remove from favorites.
+	 * @returns {Promise}
+	 */
+	async postsFavorite(post_id, { favorite = true } = {}) {
 		let params = new RequestParameters();
+		let fav_formatted;
+
 		if (!post_id) throw new Error(`post_id must be specified! Got ${post_id}`);
 		if (favorite != 1 && favorite != -1) throw new Error(`favorite must be either "1" or "-1"! Got ${favorite}`);
 
-		params.add(`post_id`, post_id);
-		params.add(`favorite`, favorite);
+		if (['up', 1, '1', 'favorite', true].includes(favorite)) fav_formatted = 1;
+		else if (['down', -1, '-1', 'unfavorite', false].includes(favorite)) fav_formatted = -1;
 
-		if (favorite == 1)
+		params.add(`favorite`, fav_formatted);
+
+		if (fav_formatted === 1) {
+			params.add(`post_id`, post_id);
 			return this._checkResponseCode(await this._makePostRequest(`/favorites.json`, params.list()));
-		else
-			return this._checkResponseCode(await this._makePostRequest(`/favorites/${post_id}.json`, params.list()));
+		}
+		else {
+			return this._checkResponseCode(await this._makeDeleteRequest(`/favorites/${post_id}.json`, params.list()));
+		}
 	}
 
+	/**
+	 * Mark posts for deletion.
+	 * @param {string} post_id - The ID of the post to delete.
+	 * @param {string} reason  - The reason to mark the post for deletion.
+	 * @param {object} [optional] - Optional parameters
+	 * @param {boolean} [optional.delete_post=true] - Set to "true" to delete the post. Set to "false" to undelete it.
+	 * @returns {Promise}
+	 */
+	async postsDelete(post_id, { reason, delete_post = true } = {}) {
+		if (delete_post && !reason) throw new Error('You must supply a reason for a post deletion.');
+		let params = new RequestParameters();
 
-	// TODO: Is source_diff %0A newline?
+		params.add(`reason`, reason);
+
+		if (delete_post) {
+			params.add(`commit`, `Delete`);
+			return this._checkResponseCode(await this._makePostRequest(`/moderator/post/posts/${post_id}/delete.json`, params.list()));
+		}
+		else {
+			return this._checkResponseCode(await this._makePostRequest(`/moderator/post/posts/${post_id}/undelete.json`, params.list()));
+		}
+	}
+
+	/**
+	 * Destroys a post.
+	 * @param {string} post_id - The post ID of the post to destroy.
+	 * @returns {Promise}
+	 */
+	async postsDestroy(post_id) {
+		return this._checkResponseCode(await this._makePostRequest(`/moderator/post/posts/${post_id}/expunge.json`));
+	}
+
 	/**
 	 * Update a post
 	 * @param {string} post_id - The target post.
-	 * @param {Object} options - Different options for a post you can change.
+	 * @param {Object} [optional] - Different options for a post you can change.
 	 * @param {string} [options.tag_string_diff] - A space separated list of tag changes.
-	 * @param {string} [option.source_diff] - A newline separated list of tag changes.
+	 * @param {string} [option.source_diff] - A space separated list of 'https' source changes.
 	 * @param {string} [option.parent_id] - The id of the parent post.
 	 * @param {string} [option.description] - The description of the post.
 	 * @param {string} [option.rating] - The rating of the post.
 	 * @param {string} [option.edit_reason] - The reason of the edit.
-	 * @param {string} [option.lock_rating] - Lock the rating of the post.
-	 * @param {string} [option.lock_notes] - Lock the notes on the post.
+	 * @param {boolean} [option.lock_rating] - Lock the rating of the post.
+	 * @param {boolean} [option.lock_notes] - Lock the notes on the post.
+	 * @returns {Promise}
 	 */
 	async postsUpdate(post_id, { tag_string_diff, source_diff, parent_id, description, rating, edit_reason, lock_rating, lock_notes } = {}) {
 		let params = new RequestParameters(`post`);
 		params.add(`tag_string_diff`, tag_string_diff);
-		params.add(`source_diff`, source_diff);
+		params.add(`source_diff`, source_diff.replace(' ', '\n'));
 		params.add(`parent_id`, parent_id);
 		params.add(`description`, description);
 		params.add(`rating`, rating);
 		params.add(`edit_reason`, edit_reason);
-		params.add(`lock_rating`, lock_rating);
-		params.add(`lock_notes`, lock_notes);
+		params.add(`is_rating_locked`, lock_rating);
+		params.add(`is_note_locked`, lock_notes);
 
 		return this._checkResponseCode(await this._makePatchRequest(`/posts/${post_id}.json`, params.list()));
 	}
+
+	// TODO: Farther development needed.
+	// /**
+	//  * Approve or unapprove a post.
+	//  * @param {string} post_id - The ID of the post to approve.
+	//  * @param {object} [optional] - Optional parameters
+	//  * @param {boolean} [optional.approve] - Set to "true" to approve the post. Set to "false" to unapprove it.
+	//  * @returns { Promise }
+	//  */
+	// async postsApprove(post_id, { approve = true } = {}) {
+	// 	let params = new RequestParameters();
+
+	// 	params.add(`post_id`, post_id);
+	// 	if (approve) return this._checkResponseCode(await this._makePostRequest(`/moderator/post/approval.json`, params.list()));
+	// 	else return this._checkResponseCode(await this._makeDeleteRequest(`/moderator/post/approval.json`, params.list()));
+	// };
+
+	/*
+	What are these?
+	async postsReport(post_id, reason) { }
+
+	async postsUpdateIQDB(post_id) { 
+			return this._checkResponseCode(await this._makeGetRequest(`/posts/${post_id}/update_iqdb`, params.list()));
+	} 
+	*/
+
+	// ─── FLAGS ──────────────────────────────────────────────────────────────────────
 	/**
 	 * List post flags
 	 * @param {Object} options Options in listing post flags.
@@ -237,7 +313,7 @@ class e621 {
 	 * @param {string} [options.creator_name] - Filter based on the account name.
 	 * @param {number} [options.limit] - The maximum amount of search results to return.
 	 */
-	async postFlagList({ creator_id, post_id, creator_name, limit } = {}) {
+	async postsFlagList({ creator_id, post_id, creator_name, limit } = {}) {
 		let params = new RequestParameters();
 		params.add(`creator_id`, creator_id);
 		params.add(`post_id`, post_id);
@@ -246,7 +322,6 @@ class e621 {
 
 		return this._checkResponseCode(await this._makeGetRequest(`/post_flags.json`, params.list()));
 	}
-
 	/**
 	 * Create a flag on a post
 	 * @param {string} post_id - The ID of the target post.
@@ -254,12 +329,12 @@ class e621 {
 	 * @param {Object} optional
 	 * @param {string} [optional.parent_id] - Required if reason_label = "inferior", the ID of the superior post.
 	 */
-	async postFlagCreate(post_id, reason_name, { parent_id } = {}) {
+	async postsFlagCreate(post_id, reason_name, { parent_id } = {}) {
 		let params = new RequestParameters(`post_flag`);
 		const reason_list = ["dnp_artist", "pay_content", "trace", "previously_deleted", "real_porn", "corrupt", "inferior", "user"];
 
-		if (!reason_list.includes(reason_label)) throw new Error(`No valid reason label supplied!\nMust be one of '"dnp_artist", "pay_content", "trace", "previously_deleted", "real_porn", "corrupt", "inferior", "user"'`);
-		if (reason_label === `inferior` && !parent_id) throw new Error(`Parent ID must be supplied when flagging a post as inferior`);
+		if (!reason_list.includes(reason_name)) throw new Error(`No valid reason label supplied!\nMust be one of '"dnp_artist", "pay_content", "trace", "previously_deleted", "real_porn", "corrupt", "inferior", "user"'`);
+		if (reason_name === `inferior` && !parent_id) throw new Error(`Parent ID must be supplied when flagging a post as inferior`);
 
 		params.add(`post_id`, post_id);
 		params.add(`reason_name`, reason_name);
@@ -268,7 +343,8 @@ class e621 {
 		return this._checkResponseCode(await this._makePostRequest(`/post_flags.json`, params.list()), 201);
 	}
 
-	/* ---------------------------------- Tags ---------------------------------- */
+
+	// ─── TAGS ───────────────────────────────────────────────────────────────────────
 	//REVIEW: Category as string & number?
 	/**
 	 * List tags
@@ -696,67 +772,18 @@ class e621 {
 		params.add(`limit`, limit, true);
 
 		return this._checkResponseCode(await this._makeGetRequest(`/forum_topics.json`, params.list()));
-
 	}
 
-	/* ------------------------- Enums and user helpers ------------------------- */
-	enums = {
-		tag_categories: {
-			"0": `general`,
-			"1": `artist`,
-			"3": `copyright`,
-			"4": `character`,
-			"5": `species`,
-			"6": `invalid`,
-			"7": `meta`,
-			"8": `lore`,
-
-			"general": "0",
-			"artist": "1",
-			"copyright": "3",
-			"character": "4",
-			"species": "5",
-			"invalid": "6",
-			"meta": "7",
-			"lore": "8"
-		},
-		forum_topic_categories: {
-			"1": "General",
-			"11": "Site Bug Reports & Feature Requests",
-			"10": "Tag/Wiki Projects and Questions",
-			"2": "Tag Alias and Implication Suggestions",
-			"3": "Art Talk",
-			"5": "Off Topic",
-			"9": "e621 Tools and Applications",
-
-			"General": "1",
-			"Site Bug Reports & Feature Requests": "11",
-			"Tag/Wiki Projects and Questions": "10",
-			"Tag Alias and Implication Suggestions": "2",
-			"Art Talk": "3",
-			"Off Topic": "5",
-			"e621 Tools and Applications": "9"
-		},
-		account_levels: {
-			"20": "Member",
-			"30": "Privileged",
-			"33": "Contributor",
-			"34": "Former Staff",
-			"35": "Janitor",
-			"50": "Admin",
-
-			"Member": "20",
-			"Privileged": "30",
-			"Contributor": "33",
-			"Former Staff": "34",
-			"Janitor": "35",
-			"Admin": "50"
-		}
-	};
-
+	/* 	async newsUpdate(message) {
+			let params = new RequestParameters(`news_update`);
+	
+			params.add('message', message);
+			return this._checkResponseCode(await this._makePostRequest(`/posts/${post_id}/votes.json`, params.list()));
+		} */
 }
 
-// TODO: Test list()
+/* ------------------------- Enums and user helpers ------------------------- */
+
 class RequestParameters {
 	constructor(wrapper) {
 		this.params = {};
@@ -773,4 +800,74 @@ class RequestParameters {
 		return this.params;
 	}
 }
-module.exports = { e621 };
+
+enums = {
+	tag_categories: {
+		"0": `general`,
+		"1": `artist`,
+		"3": `copyright`,
+		"4": `character`,
+		"5": `species`,
+		"6": `invalid`,
+		"7": `meta`,
+		"8": `lore`,
+
+		"general": "0",
+		"artist": "1",
+		"copyright": "3",
+		"character": "4",
+		"species": "5",
+		"invalid": "6",
+		"meta": "7",
+		"lore": "8"
+	},
+	post_reporting: {
+		'1': 'Rating Abuse',
+		'2': 'Malicious File',
+		'3': 'Malicious Sources',
+		'4': 'Description Abuse',
+		'5': 'Note Abuse',
+		'6': 'Tagging Abuse',
+
+		'Rating Abuse': '1',
+		'Malicious File': '2',
+		'Malicious Sources': '3',
+		'Description Abuse': '4',
+		'Note Abuse': '5',
+		'Tagging Abuse': '6'
+	},
+	forum_topic_categories: {
+		"1": "General",
+		"11": "Site Bug Reports & Feature Requests",
+		"10": "Tag/Wiki Projects and Questions",
+		"2": "Tag Alias and Implication Suggestions",
+		"3": "Art Talk",
+		"5": "Off Topic",
+		"9": "e621 Tools and Applications",
+
+		"General": "1",
+		"Site Bug Reports & Feature Requests": "11",
+		"Tag/Wiki Projects and Questions": "10",
+		"Tag Alias and Implication Suggestions": "2",
+		"Art Talk": "3",
+		"Off Topic": "5",
+		"e621 Tools and Applications": "9"
+	},
+	account_levels: {
+		"20": "Member",
+		"30": "Privileged",
+		"33": "Contributor",
+		"34": "Former Staff",
+		"35": "Janitor",
+		"50": "Admin",
+
+		"Member": "20",
+		"Privileged": "30",
+		"Contributor": "33",
+		"Former Staff": "34",
+		"Janitor": "35",
+		"Admin": "50"
+	}
+};
+
+module.exports = { e621, enums };
