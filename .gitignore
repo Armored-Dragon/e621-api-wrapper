@@ -1,3 +1,4 @@
 node_modules
 .vscode/
+*.code-workspace
 priv_test.js
