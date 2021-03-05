@@ -306,7 +306,7 @@ class e621 {
 
 	// ─── FLAGS ──────────────────────────────────────────────────────────────────────
 	/**
-	 * List post flags
+	 * List flags created on posts.
 	 * @param {Object} options Options in listing post flags.
 	 * @param {string} [options.creator_id] - Filter based on the id of the creator.
 	 * @param {string} [options.post_id] - Filter based on the post ID.
@@ -323,13 +323,15 @@ class e621 {
 		return this._checkResponseCode(await this._makeGetRequest(`/post_flags.json`, params.list()));
 	}
 	/**
-	 * Create a flag on a post
+	 * Create a flag on a post.
 	 * @param {string} post_id - The ID of the target post.
-	 * @param {string} reason_label - One of "dnp_artist", "pay_content", "trace", "previously_deleted", "real_porn", "corrupt", "inferior", or "user".
-	 * @param {Object} optional
-	 * @param {string} [optional.parent_id] - Required if reason_label = "inferior", the ID of the superior post.
+	 * @param {string} reason_name - One of "dnp_artist", "pay_content", "trace", "previously_deleted", "real_porn", "corrupt", "inferior", or "user".
+	 * @param {Object} [optional]
+	 * @param {string} [optional.parent_id] - Required if reason_name = "inferior", the ID of the superior post.
 	 */
 	async postsFlagCreate(post_id, reason_name, { parent_id } = {}) {
+		if (!post_id || !reason_name) throw new Error(`You are missing the following parameters:\n ${reason_name ? '' : '"reason_name "'}${post_id ? '' : '"post_id "'}`);
+
 		let params = new RequestParameters(`post_flag`);
 		const reason_list = ["dnp_artist", "pay_content", "trace", "previously_deleted", "real_porn", "corrupt", "inferior", "user"];
 
@@ -346,8 +348,9 @@ class e621 {
 
 	// ─── TAGS ───────────────────────────────────────────────────────────────────────
 	//REVIEW: Category as string & number?
+	// TODO: Unsure what category is.
 	/**
-	 * List tags
+	 * Find and lists available tags.
 	 * @param {Object} options - The options.
 	 * @param {string} [options.name_matches] - Filter by the name of the tag.
 	 * @param {number} [options.category] - Filter by the category of the tag.
@@ -372,10 +375,9 @@ class e621 {
 		return this._checkResponseCode(await this._makeGetRequest(`/tags.json`, params.list()));
 	}
 
-	/* ------------------------------- Tag aliases ------------------------------ */
 	/**
 	 * List tag aliases.
-	 * @param {Object} options - Options when listing tag aliases.
+	 * @param {Object} [options] - Options when listing tag aliases.
 	 * @param {string} [options.name_matches] - Tag name expression to match against.
 	 * @param {string} [options.status] - Filter by status.
 	 * @param {string} [options.order] - Change the sort order.
@@ -404,10 +406,10 @@ class e621 {
 		return this._checkResponseCode(await this._makeGetRequest(`/tags.json`, params.list()));
 	}
 
-	/* ---------------------------------- Notes --------------------------------- */
+	// ─── NOTES ──────────────────────────────────────────────────────────────────────
 	/**
 	 * List notes
-	 * @param {Object} search_options - Options when listing notes.
+	 * @param {Object} [search_options] - Options when listing notes.
 	 * @param {string} [search_options.body_matches] - The notes contents to match against.
 	 * @param {string} [search_options.note_id] - Search for notes based on ID.
 	 * @param {string} [search_options.post_tags_match] - Search for notes based on their parent post's tags.
@@ -497,7 +499,6 @@ class e621 {
 		return this._checkResponseCode(await this._makeDeleteRequest(`/notes/${note_id}.json`));
 	}
 
-	// NOTE: No one knows how to get the version ID cleanly from API. If you do, please tell! :)
 	/**
 	 * Revert a note to a previous version.
 	 * @param {string} note_id - The target note's ID.

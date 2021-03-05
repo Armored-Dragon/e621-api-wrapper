@@ -1,6 +1,6 @@
 {
 	"name": "e621-api-wrapper",
-	"version": "1.0.2",
+	"version": "1.0.3",
 	"description": "A simple API wrapper for e621/e926.",
 	"main": "e621-api-wrapper.js",
 	"dependencies": {

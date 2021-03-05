@@ -3,3 +3,4 @@ node_modules
 *.code-workspace
 priv_test.js
 tests/dev_account.json
+images/

@@ -21,7 +21,7 @@ Please note that any code outside of the master branch is testing related and sh
 ## Supported Endpoints
 | Endpoint | &nbsp; List &nbsp; | Create | Vote | Update | Delete | Revert |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|
-|Posts|✓|✓|✓|✓|||
+|Posts|✓|✓|✓|✓|✓||
 |Flags|✓|✓|||||
 |Notes|✓|✓||✓|✓|✓|
 |Pools|✓|✓||✓||✓|
