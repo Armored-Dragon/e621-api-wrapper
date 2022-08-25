@@ -9,6 +9,9 @@
 
 </p>
 
+# Archive Notice
+Future releases and maintanance will be at this repository: https://gitlab.com/ArmoredDragon/e621-api-wrapper
+
 ## About
 A simple API wrapper for e621 and e926.<br>
 
