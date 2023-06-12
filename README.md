@@ -1,3 +1,7 @@
+# Deprecation notice
+I no longer have the desire to work on this project and will no longer receive updates of any kind. 
+Please see https://www.npmjs.com/package/e621 as a potential alternative. 
+
 <p align="center"> 
 &nbsp; &nbsp; &nbsp; <img src="https://github.com/Armored-Dragon/e621-api-wrapper/blob/master/images/e621_api_wrapper_logo_(1.0.0).png?raw=true" height="150">
 </p>
